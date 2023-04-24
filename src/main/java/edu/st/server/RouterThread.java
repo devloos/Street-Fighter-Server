@@ -6,8 +6,14 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import edu.st.common.messages.Message;
+import edu.st.common.messages.Packet;
+import edu.st.common.messages.Received;
+import edu.st.common.messages.Subscribe;
+import edu.st.common.messages.client.CreateGame;
+import edu.st.common.messages.server.GameList;
+import edu.st.common.models.Game;
 import edu.st.common.serialize.SerializerFactory;
-import edu.st.common.test.*;
 import javafx.util.Pair;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -21,6 +27,7 @@ public class RouterThread extends Thread {
 
   private static volatile ArrayList<Pair<Socket, Packet<Message>>> jobs = new ArrayList<>();
   private HashMap<String, ArrayList<Socket>> map = new HashMap<String, ArrayList<Socket>>();
+  private ArrayList<Game> currentGames = new ArrayList<>();
 
   @Override
   public void run() {
@@ -36,15 +43,30 @@ public class RouterThread extends Thread {
 
       if (message.getType().contains("Subscribe")) {
         Subscribe subscribe = (Subscribe) message;
-        for (String c : subscribe.getChannels()) {
-          ArrayList<Socket> list = getSockets(c);
+        for (String channelToSub : subscribe.getChannels()) {
+          getSockets(channelToSub).add(socket);
 
-          for (Socket s : list) {
-            println(s, new Message(c + " User: " + subscribe.getUsername() + " has joined channel! (Server)"), channel);
+          if (channelToSub.equals("/subscribe/gamelist")) {
+            GameList gamelist = new GameList(currentGames);
+            for (Socket s : getSockets("/subscribe/gamelist")) {
+              println(s, gamelist, "/gamelist");
+            }
           }
+        }
 
-          list.add(socket);
-          println(socket, new Received(true, c + " You have been subscribed! (Server)"), channel);
+        deleteJob();
+        continue;
+      }
+
+      if (message.getType().contains("CreateGame")) {
+        CreateGame createGame = (CreateGame) message;
+        Game game = new Game(createGame.getGameId(), createGame.getUsername(), null);
+
+        currentGames.add(game);
+
+        GameList gamelist = new GameList(currentGames);
+        for (Socket s : getSockets("/subscribe/gamelist")) {
+          println(s, gamelist, "/gamelist");
         }
 
         deleteJob();

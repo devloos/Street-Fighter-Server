@@ -6,7 +6,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-import edu.st.common.test.*;;
+import edu.st.common.messages.Message;
 
 public class Server {
 
