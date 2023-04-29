@@ -46,9 +46,9 @@ public class RouterThread extends Thread {
         for (String channelToSub : subscribe.getChannels()) {
           getSockets(channelToSub).add(socket);
 
-          if (channelToSub.equals("/subscribe/gamelist")) {
+          if (channelToSub.equals("/gamelist")) {
             GameList gamelist = new GameList(currentGames);
-            for (Socket s : getSockets("/subscribe/gamelist")) {
+            for (Socket s : getSockets("/gamelist")) {
               println(s, gamelist, "/gamelist");
             }
           }
@@ -65,7 +65,7 @@ public class RouterThread extends Thread {
         currentGames.add(game);
 
         GameList gamelist = new GameList(currentGames);
-        for (Socket s : getSockets("/subscribe/gamelist")) {
+        for (Socket s : getSockets("/gamelist")) {
           println(s, gamelist, "/gamelist");
         }
 
