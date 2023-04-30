@@ -5,13 +5,18 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Optional;
+import java.util.UUID;
 
 import edu.st.common.messages.Message;
 import edu.st.common.messages.Packet;
 import edu.st.common.messages.Received;
 import edu.st.common.messages.Subscribe;
 import edu.st.common.messages.client.CreateGame;
+import edu.st.common.messages.client.JoinGame;
+import edu.st.common.messages.server.GameJoined;
 import edu.st.common.messages.server.GameList;
+import edu.st.common.messages.server.PlayerJoined;
 import edu.st.common.models.Game;
 import edu.st.common.serialize.SerializerFactory;
 import javafx.util.Pair;
@@ -60,7 +65,7 @@ public class RouterThread extends Thread {
 
       if (message.getType().contains("CreateGame")) {
         CreateGame createGame = (CreateGame) message;
-        Game game = new Game(createGame.getGameId(), createGame.getUsername(), null);
+        Game game = new Game(UUID.randomUUID(), createGame.getGamename(), createGame.getUsername(), null);
 
         currentGames.add(game);
 
@@ -68,6 +73,37 @@ public class RouterThread extends Thread {
         for (Socket s : getSockets("/gamelist")) {
           println(s, gamelist, "/gamelist");
         }
+
+        ArrayList<Socket> list = new ArrayList<>();
+        list.add(socket);
+        map.put(game.getGameId().toString(), list);
+
+        deleteJob();
+        continue;
+      }
+
+      if (message.getType().contains("JoinGame")) {
+        JoinGame joinGame = (JoinGame) message;
+
+        Optional<Game> game = currentGames
+            .stream()
+            .filter(el -> el.getGameId().equals(joinGame.getGameId()))
+            .findFirst();
+
+        if (!game.isPresent()) {
+          System.out.println("ERROR GAME NOT FOUND");
+          continue;
+        }
+
+        game.get().setPlayername(joinGame.getUsername());
+        ArrayList<Socket> list = getSockets(game.get().getGameId().toString());
+        list.add(socket);
+
+        PlayerJoined playerJoined = new PlayerJoined(joinGame.getUsername());
+        println(list.get(0), playerJoined, game.get().getGameId().toString());
+
+        GameJoined gameJoined = new GameJoined(game.get().getHostname());
+        println(list.get(1), gameJoined, game.get().getGameId().toString());
 
         deleteJob();
         continue;
