@@ -32,7 +32,6 @@ public class RouterThread extends Thread {
 
   private static volatile ArrayList<Pair<Socket, Packet<Message>>> jobs = new ArrayList<>();
   private HashMap<String, ArrayList<Socket>> map = new HashMap<String, ArrayList<Socket>>();
-  private ArrayList<Game> currentGames = new ArrayList<>();
 
   @Override
   public void run() {
@@ -52,24 +51,21 @@ public class RouterThread extends Thread {
           getSockets(channelToSub).add(socket);
 
           if (channelToSub.equals("/gamelist")) {
-            GameList gamelist = new GameList(currentGames);
+            GameList gamelist = new GameList(GameController.getGames());
             for (Socket s : getSockets("/gamelist")) {
               println(s, gamelist, "/gamelist");
             }
           }
         }
-
-        deleteJob();
-        continue;
       }
 
       if (message.getType().contains("CreateGame")) {
         CreateGame createGame = (CreateGame) message;
-        Game game = new Game(UUID.randomUUID(), createGame.getGamename(), createGame.getUsername(), null);
+        Game game = new Game(UUID.randomUUID(), createGame.getHostname(), socket, null, null);
 
-        currentGames.add(game);
+        GameController.addGame(game);
 
-        GameList gamelist = new GameList(currentGames);
+        GameList gamelist = new GameList(GameController.getGames());
         for (Socket s : getSockets("/gamelist")) {
           println(s, gamelist, "/gamelist");
         }
@@ -77,44 +73,34 @@ public class RouterThread extends Thread {
         ArrayList<Socket> list = new ArrayList<>();
         list.add(socket);
         map.put(game.getGameId().toString(), list);
-
-        deleteJob();
-        continue;
       }
 
       if (message.getType().contains("JoinGame")) {
         JoinGame joinGame = (JoinGame) message;
 
-        Optional<Game> game = currentGames
-            .stream()
-            .filter(el -> el.getGameId().equals(joinGame.getGameId()))
-            .findFirst();
+        Game game = GameController.findGame(joinGame);
 
-        if (!game.isPresent()) {
+        if (game == null) {
           System.out.println("ERROR GAME NOT FOUND");
           continue;
         }
 
-        game.get().setPlayername(joinGame.getUsername());
-        ArrayList<Socket> list = getSockets(game.get().getGameId().toString());
+        String gameId = game.getGameId().toString();
+
+        game.setPlayername(joinGame.getUsername());
+        game.setPlayerSocket(socket);
+        ArrayList<Socket> list = getSockets(gameId);
         list.add(socket);
 
         PlayerJoined playerJoined = new PlayerJoined(joinGame.getUsername());
-        println(list.get(0), playerJoined, game.get().getGameId().toString());
+        println(list.get(0), playerJoined, gameId);
 
-        GameJoined gameJoined = new GameJoined(game.get().getHostname());
-        println(list.get(1), gameJoined, game.get().getGameId().toString());
+        GameJoined gameJoined = new GameJoined(game.getHostname());
+        println(list.get(1), gameJoined, gameId);
 
-        deleteJob();
-        continue;
-      }
-
-      ArrayList<Socket> list = getSockets(channel);
-
-      for (Socket s : list) {
-        if (s != socket) {
-          println(s, message, channel);
-        }
+        // temporary
+        // we send a Game Started to both players
+        // actually send them to avatar selection
       }
 
       deleteJob();

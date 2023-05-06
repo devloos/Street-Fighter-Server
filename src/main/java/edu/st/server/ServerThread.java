@@ -11,8 +11,10 @@ import edu.st.common.messages.Packet;
 import edu.st.common.serialize.*;
 import javafx.util.Pair;
 import lombok.Getter;
+import lombok.Setter;
 
 @Getter
+@Setter
 public class ServerThread extends Thread {
 
     private Socket socket = null;
@@ -40,7 +42,15 @@ public class ServerThread extends Thread {
                     return;
                 }
 
-                RouterThread.addJob(new Pair<Socket, Packet<Message>>(socket, packet));
+                Message actualMessage = packet.getMessage();
+                String channel = packet.getChannel();
+
+                // if message invovles current game
+                if (actualMessage.getType().contains("MakeMove")) {
+                    GameController.addJob(new Pair<Socket, Packet<Message>>(socket, packet));
+                } else {
+                    RouterThread.addJob(new Pair<Socket, Packet<Message>>(socket, packet));
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
