@@ -4,7 +4,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import edu.st.common.Util;
 import edu.st.common.messages.Message;
@@ -15,7 +14,6 @@ import edu.st.common.messages.client.JoinGame;
 import edu.st.common.messages.server.GameList;
 import edu.st.common.messages.server.GameStarted;
 import edu.st.common.models.Game;
-import edu.st.common.models.GamePair;
 import javafx.util.Pair;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;

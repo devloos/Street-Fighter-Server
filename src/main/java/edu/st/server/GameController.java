@@ -9,8 +9,10 @@ import edu.st.common.Util;
 import edu.st.common.messages.GameResult;
 import edu.st.common.messages.Message;
 import edu.st.common.messages.Packet;
+import edu.st.common.messages.client.BackToMainMenu;
 import edu.st.common.messages.client.JoinGame;
 import edu.st.common.messages.client.MakeMove;
+import edu.st.common.messages.client.PlayAgain;
 import edu.st.common.messages.server.GameEnded;
 import edu.st.common.messages.server.MoveMade;
 import edu.st.common.models.Game;
@@ -37,16 +39,16 @@ public class GameController extends Thread {
       // eventually move to bottom
       // doing job
       deleteJob();
+      Game game = currentGames.stream().filter(el -> el.getGameId().toString().equals(channel)).findFirst()
+          .orElse(null);
+
+      if (game == null) {
+        System.out.println("GAME NOT FOUND IN GAME CONTROLLER");
+        continue;
+      }
 
       if (message.getType().contains("MakeMove")) {
         MakeMove msg = (MakeMove) message;
-        Game game = currentGames.stream().filter(el -> el.getGameId().toString().equals(channel)).findFirst()
-            .orElse(null);
-
-        if (game == null) {
-          System.out.println("GAME NOT FOUND IN GAME CONTROLLER");
-          continue;
-        }
 
         // make sure its current player
         if (game.getCurrentPlayer() == Token.X && socket != game.getHostSocket()) {
@@ -86,6 +88,29 @@ public class GameController extends Thread {
         MoveMade moveMade = new MoveMade(row, col);
         Util.println(game.getHostSocket(), moveMade, channel);
         Util.println(game.getPlayerSocket(), moveMade, channel);
+      }
+
+      if (message.getType().contains("PlayAgain")) {
+        // make sure its current player
+        if (socket == game.getHostSocket()) {
+          game.setHostPlayAgain(true);
+        } else {
+          game.setPlayerPlayAgain(true);
+        }
+
+        if (game.playAgain()) {
+          game.resetGame();
+          PlayAgain msg = new PlayAgain();
+          Util.println(game.getHostSocket(), msg, channel);
+          Util.println(game.getPlayerSocket(), msg, channel);
+        }
+      }
+
+      if (message.getType().contains("BackToMainMenu")) {
+        currentGames.remove(game);
+        BackToMainMenu msg = new BackToMainMenu();
+        Util.println(game.getHostSocket(), msg, channel);
+        Util.println(game.getPlayerSocket(), msg, channel);
       }
     }
   }
