@@ -3,15 +3,19 @@ package edu.st.server;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import edu.st.common.Util;
+import edu.st.common.messages.GameResult;
 import edu.st.common.messages.Message;
 import edu.st.common.messages.Packet;
 import edu.st.common.messages.client.JoinGame;
 import edu.st.common.messages.client.MakeMove;
+import edu.st.common.messages.server.GameEnded;
 import edu.st.common.messages.server.MoveMade;
 import edu.st.common.models.Game;
 import edu.st.common.models.GamePair;
+import edu.st.common.models.Token;
 import javafx.util.Pair;
 
 public class GameController extends Thread {
@@ -25,33 +29,64 @@ public class GameController extends Thread {
         continue;
       }
 
-      // Socket socket = jobs.get(0).getKey();
+      Socket socket = jobs.get(0).getKey();
       Packet<Message> packet = jobs.get(0).getValue();
       Message message = packet.getMessage();
       String channel = packet.getChannel();
+
+      // eventually move to bottom
+      // doing job
+      deleteJob();
 
       if (message.getType().contains("MakeMove")) {
         MakeMove msg = (MakeMove) message;
         Game game = currentGames.stream().filter(el -> el.getGameId().toString().equals(channel)).findFirst()
             .orElse(null);
 
-        if (game != null) {
-          Integer row = msg.getRow();
-          Integer col = msg.getCol();
-
-          game.updateBoard(row, col);
-
-          // do lots of validation
-
-          MoveMade moveMade = new MoveMade(row, col);
-          Util.println(game.getHostSocket(), moveMade, channel);
-          Util.println(game.getPlayerSocket(), moveMade, channel);
-        } else {
+        if (game == null) {
           System.out.println("GAME NOT FOUND IN GAME CONTROLLER");
+          continue;
         }
-      }
 
-      deleteJob();
+        // make sure its current player
+        if (game.getCurrentPlayer() == Token.X && socket != game.getHostSocket()) {
+          continue;
+        }
+
+        // make sure its current player
+        if (game.getCurrentPlayer() == Token.Y && socket != game.getPlayerSocket()) {
+          continue;
+        }
+
+        Integer row = msg.getRow();
+        Integer col = msg.getCol();
+
+        ArrayList<ArrayList<Token>> board = game.getBoard();
+
+        if (board.get(row).get(col) != null) {
+          continue;
+        }
+
+        game.updateBoard(row, col);
+
+        if (Util.isWinner(board)) {
+          GameEnded gameEnded = new GameEnded(GameResult.Tie, row, col);
+          Util.println(game.getHostSocket(), gameEnded, channel);
+          Util.println(game.getPlayerSocket(), gameEnded, channel);
+          continue;
+        }
+
+        if (Util.isBoardFull(board)) {
+          GameEnded gameEnded = new GameEnded(GameResult.Tie, row, col);
+          Util.println(game.getHostSocket(), gameEnded, channel);
+          Util.println(game.getPlayerSocket(), gameEnded, channel);
+          continue;
+        }
+
+        MoveMade moveMade = new MoveMade(row, col);
+        Util.println(game.getHostSocket(), moveMade, channel);
+        Util.println(game.getPlayerSocket(), moveMade, channel);
+      }
     }
   }
 
@@ -77,9 +112,12 @@ public class GameController extends Thread {
   }
 
   public static synchronized ArrayList<GamePair> getGames() {
-    ArrayList<GamePair> games = new ArrayList<>();
+    ArrayList<Game> notLiveGames = currentGames.stream()
+        .filter(el -> !el.isLive())
+        .collect(Collectors.toCollection(ArrayList::new));
 
-    for (Game game : currentGames) {
+    ArrayList<GamePair> games = new ArrayList<>();
+    for (Game game : notLiveGames) {
       games.add(new GamePair(game.getGameId(), game.getHostname()));
     }
 

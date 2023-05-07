@@ -4,6 +4,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import edu.st.common.Util;
 import edu.st.common.messages.Message;
@@ -14,6 +15,7 @@ import edu.st.common.messages.client.JoinGame;
 import edu.st.common.messages.server.GameList;
 import edu.st.common.messages.server.GameStarted;
 import edu.st.common.models.Game;
+import edu.st.common.models.GamePair;
 import javafx.util.Pair;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -84,6 +86,7 @@ public class RouterThread extends Thread {
 
         game.setPlayername(joinGame.getUsername());
         game.setPlayerSocket(socket);
+        game.setLive(true);
         ArrayList<Socket> list = getSockets(gameId);
         list.add(socket);
 
@@ -91,6 +94,11 @@ public class RouterThread extends Thread {
         Util.println(list.get(0), new GameStarted(joinGame.getUsername(), game.getGameId(), true), gameId);
         // player
         Util.println(list.get(1), new GameStarted(game.getHostname(), game.getGameId(), false), gameId);
+
+        GameList gamelist = new GameList(GameController.getGames());
+        for (Socket s : getSockets("/gamelist")) {
+          Util.println(s, gamelist, "/gamelist");
+        }
       }
 
       deleteJob();
