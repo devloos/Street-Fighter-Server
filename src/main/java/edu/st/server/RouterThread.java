@@ -1,23 +1,19 @@
 package edu.st.server;
 
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Optional;
 import java.util.UUID;
 
+import edu.st.common.Util;
 import edu.st.common.messages.Message;
 import edu.st.common.messages.Packet;
-import edu.st.common.messages.Received;
 import edu.st.common.messages.Subscribe;
 import edu.st.common.messages.client.CreateGame;
 import edu.st.common.messages.client.JoinGame;
 import edu.st.common.messages.server.GameList;
 import edu.st.common.messages.server.GameStarted;
 import edu.st.common.models.Game;
-import edu.st.common.serialize.SerializerFactory;
 import javafx.util.Pair;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -42,7 +38,7 @@ public class RouterThread extends Thread {
       Socket socket = jobs.get(0).getKey();
       Packet<Message> packet = jobs.get(0).getValue();
       Message message = packet.getMessage();
-      String channel = packet.getChannel();
+      // String channel = packet.getChannel();
 
       if (message.getType().contains("Subscribe")) {
         Subscribe subscribe = (Subscribe) message;
@@ -52,7 +48,7 @@ public class RouterThread extends Thread {
           if (channelToSub.equals("/gamelist")) {
             GameList gamelist = new GameList(GameController.getGames());
             for (Socket s : getSockets("/gamelist")) {
-              println(s, gamelist, "/gamelist");
+              Util.println(s, gamelist, "/gamelist");
             }
           }
         }
@@ -66,7 +62,7 @@ public class RouterThread extends Thread {
 
         GameList gamelist = new GameList(GameController.getGames());
         for (Socket s : getSockets("/gamelist")) {
-          println(s, gamelist, "/gamelist");
+          Util.println(s, gamelist, "/gamelist");
         }
 
         ArrayList<Socket> list = new ArrayList<>();
@@ -92,9 +88,9 @@ public class RouterThread extends Thread {
         list.add(socket);
 
         // host
-        println(list.get(0), new GameStarted(joinGame.getUsername(), game.getGameId(), true), gameId);
+        Util.println(list.get(0), new GameStarted(joinGame.getUsername(), game.getGameId(), true), gameId);
         // player
-        println(list.get(1), new GameStarted(game.getHostname(), game.getGameId(), false), gameId);
+        Util.println(list.get(1), new GameStarted(game.getHostname(), game.getGameId(), false), gameId);
       }
 
       deleteJob();
@@ -114,15 +110,5 @@ public class RouterThread extends Thread {
       map.put(channel, new ArrayList<Socket>());
     }
     return map.get(channel);
-  }
-
-  private void println(Socket socket, Message message, String channel) {
-    Packet<Message> packet = new Packet<Message>(message, channel);
-    try {
-      PrintWriter output = new PrintWriter(socket.getOutputStream(), true);
-      output.println(SerializerFactory.getSerializer().serialize(packet));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
   }
 }

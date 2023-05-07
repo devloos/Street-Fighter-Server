@@ -3,12 +3,11 @@ package edu.st.server;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.Socket;
 
+import edu.st.common.Util;
 import edu.st.common.messages.Message;
 import edu.st.common.messages.Packet;
-import edu.st.common.serialize.*;
 import javafx.util.Pair;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,7 +34,7 @@ public class ServerThread extends Thread {
                     return;
                 }
 
-                Packet<Message> packet = SerializerFactory.getSerializer().deserialize(message);
+                Packet<Message> packet = Util.deserialize(message);
 
                 if (packet == null) {
                     return;
@@ -51,8 +50,6 @@ public class ServerThread extends Thread {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
