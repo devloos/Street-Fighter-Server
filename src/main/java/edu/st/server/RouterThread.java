@@ -14,9 +14,8 @@ import edu.st.common.messages.Received;
 import edu.st.common.messages.Subscribe;
 import edu.st.common.messages.client.CreateGame;
 import edu.st.common.messages.client.JoinGame;
-import edu.st.common.messages.server.GameJoined;
 import edu.st.common.messages.server.GameList;
-import edu.st.common.messages.server.PlayerJoined;
+import edu.st.common.messages.server.GameStarted;
 import edu.st.common.models.Game;
 import edu.st.common.serialize.SerializerFactory;
 import javafx.util.Pair;
@@ -92,15 +91,10 @@ public class RouterThread extends Thread {
         ArrayList<Socket> list = getSockets(gameId);
         list.add(socket);
 
-        PlayerJoined playerJoined = new PlayerJoined(joinGame.getUsername());
-        println(list.get(0), playerJoined, gameId);
-
-        GameJoined gameJoined = new GameJoined(game.getHostname());
-        println(list.get(1), gameJoined, gameId);
-
-        // temporary
-        // we send a Game Started to both players
-        // actually send them to avatar selection
+        // host
+        println(list.get(0), new GameStarted(joinGame.getUsername(), game.getGameId(), true), gameId);
+        // player
+        println(list.get(1), new GameStarted(game.getHostname(), game.getGameId(), false), gameId);
       }
 
       deleteJob();

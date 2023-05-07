@@ -27,7 +27,6 @@ public class ServerThread extends Thread {
     public void run() {
         try {
             BufferedReader input = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
-            PrintWriter output = new PrintWriter(socket.getOutputStream(), true);
 
             while (!this.socket.isClosed()) {
                 String message = input.readLine();
@@ -43,7 +42,6 @@ public class ServerThread extends Thread {
                 }
 
                 Message actualMessage = packet.getMessage();
-                String channel = packet.getChannel();
 
                 // if message invovles current game
                 if (actualMessage.getType().contains("MakeMove")) {
