@@ -9,11 +9,7 @@ import edu.st.common.Util;
 import edu.st.common.messages.Message;
 import edu.st.common.messages.Packet;
 import javafx.util.Pair;
-import lombok.Getter;
-import lombok.Setter;
 
-@Getter
-@Setter
 public class ServerThread extends Thread {
 
     private Socket socket = null;
@@ -52,5 +48,13 @@ public class ServerThread extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public Socket getSocket() {
+        return socket;
+    }
+
+    public void setSocket(Socket socket) {
+        this.socket = socket;
     }
 }
