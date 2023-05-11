@@ -15,18 +15,17 @@ import edu.st.common.messages.server.GameList;
 import edu.st.common.messages.server.GameStarted;
 import edu.st.common.models.Game;
 import javafx.util.Pair;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
 
 /**
  * Server Thread processing each connected client
  */
-@NoArgsConstructor
-@AllArgsConstructor
 public class RouterThread extends Thread {
 
   private static volatile ArrayList<Pair<Socket, Packet<Message>>> jobs = new ArrayList<>();
   private HashMap<String, ArrayList<Socket>> map = new HashMap<String, ArrayList<Socket>>();
+
+  public RouterThread() {
+  }
 
   @Override
   public void run() {
