@@ -27,11 +27,6 @@ public class RouterThread extends Thread {
   public RouterThread() {
   }
 
-  public RouterThread(ArrayList<Pair<Socket, Packet<Message>>> jobs, HashMap<String, ArrayList<Socket>> map) {
-    this.jobs = jobs;
-    this.map = map;
-  }
-
   @Override
   public void run() {
     while (true) {
