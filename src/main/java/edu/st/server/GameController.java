@@ -72,9 +72,12 @@ public class GameController extends Thread {
         game.updateBoard(row, col);
 
         if (Util.isWinner(board)) {
-          GameEnded gameEnded = new GameEnded(GameResult.Tie, row, col);
-          Util.println(game.getHostSocket(), gameEnded, channel);
-          Util.println(game.getPlayerSocket(), gameEnded, channel);
+          // have to get previous because they swap before reaching
+          boolean player = game.getCurrentPlayer() == Token.X;
+          GameResult gameResult = player ? GameResult.Player : GameResult.Host;
+
+          Util.println(game.getHostSocket(), new GameEnded(gameResult, row, col), channel);
+          Util.println(game.getPlayerSocket(), new GameEnded(gameResult, row, col), channel);
           continue;
         }
 
