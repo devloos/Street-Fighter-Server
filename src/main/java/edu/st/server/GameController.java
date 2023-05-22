@@ -15,6 +15,7 @@ import edu.st.common.messages.client.MakeMove;
 import edu.st.common.messages.client.PlayAgain;
 import edu.st.common.messages.client.PlayerAvatarChange;
 import edu.st.common.messages.server.GameEnded;
+import edu.st.common.messages.server.GameStarted;
 import edu.st.common.messages.server.MoveMade;
 import edu.st.common.models.Game;
 import edu.st.common.models.GamePair;
@@ -54,6 +55,19 @@ public class GameController extends Thread {
           Util.println(game.getPlayerSocket(), msg, channel);
         } else {
           Util.println(game.getHostSocket(), msg, channel);
+        }
+      }
+
+      if (message.getType().contains("PlayerReady")) {
+        if (socket == game.getHostSocket()) {
+          game.hostReady = true;
+        } else {
+          game.playerReady = true;
+        }
+
+        if (game.bothPlayersReady()) {
+          Util.println(game.getHostSocket(), new GameStarted(), channel);
+          Util.println(game.getPlayerSocket(), new GameStarted(), channel);
         }
       }
 
@@ -108,24 +122,22 @@ public class GameController extends Thread {
       if (message.getType().contains("PlayAgain")) {
         // make sure its current player
         if (socket == game.getHostSocket()) {
-          game.setHostPlayAgain(true);
+          game.hostPlayAgain = true;
         } else {
-          game.setPlayerPlayAgain(true);
+          game.playerPlayAgain = true;
         }
 
         if (game.playAgain()) {
           game.resetGame();
-          PlayAgain msg = new PlayAgain();
-          Util.println(game.getHostSocket(), msg, channel);
-          Util.println(game.getPlayerSocket(), msg, channel);
+          Util.println(game.getHostSocket(), new PlayAgain(), channel);
+          Util.println(game.getPlayerSocket(), new PlayAgain(), channel);
         }
       }
 
       if (message.getType().contains("BackToMainMenu")) {
         currentGames.remove(game);
-        BackToMainMenu msg = new BackToMainMenu();
-        Util.println(game.getHostSocket(), msg, channel);
-        Util.println(game.getPlayerSocket(), msg, channel);
+        Util.println(game.getHostSocket(), new BackToMainMenu(), channel);
+        Util.println(game.getPlayerSocket(), new BackToMainMenu(), channel);
       }
     }
   }

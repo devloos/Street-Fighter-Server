@@ -23,7 +23,7 @@ public class ServerThread extends Thread {
         try {
             BufferedReader input = new BufferedReader(new InputStreamReader(this.socket.getInputStream()));
 
-            while (!this.socket.isClosed()) {
+            while (true) {
                 String message = input.readLine();
 
                 if (message == null) {
@@ -38,12 +38,14 @@ public class ServerThread extends Thread {
 
                 Message actualMessage = packet.getMessage();
 
-                if (actualMessage.getType().contains("MakeMove")) {
-                    GameController.addJob(new Pair<Socket, Packet<Message>>(socket, packet));
-                } else if (actualMessage.getType().contains("PlayerAvatarChange")) {
-                    GameController.addJob(new Pair<Socket, Packet<Message>>(socket, packet));
-                } else {
+                if (actualMessage.getType().contains("CreateGame")) {
                     RouterThread.addJob(new Pair<Socket, Packet<Message>>(socket, packet));
+                } else if (actualMessage.getType().contains("JoinGame")) {
+                    RouterThread.addJob(new Pair<Socket, Packet<Message>>(socket, packet));
+                } else if (actualMessage.getType().contains("Subscribe")) {
+                    RouterThread.addJob(new Pair<Socket, Packet<Message>>(socket, packet));
+                } else {
+                    GameController.addJob(new Pair<Socket, Packet<Message>>(socket, packet));
                 }
             }
         } catch (IOException e) {

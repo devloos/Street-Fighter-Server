@@ -37,7 +37,6 @@ public class RouterThread extends Thread {
       Socket socket = jobs.get(0).getKey();
       Packet<Message> packet = jobs.get(0).getValue();
       Message message = packet.getMessage();
-      // String channel = packet.getChannel();
 
       if (message.getType().contains("Subscribe")) {
         Subscribe subscribe = (Subscribe) message;
@@ -73,11 +72,6 @@ public class RouterThread extends Thread {
         JoinGame joinGame = (JoinGame) message;
 
         Game game = GameController.findGame(joinGame);
-
-        if (game == null) {
-          System.out.println("ERROR GAME NOT FOUND");
-          continue;
-        }
 
         String gameId = game.getGameId().toString();
 
