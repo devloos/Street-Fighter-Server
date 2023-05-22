@@ -13,6 +13,7 @@ import edu.st.common.messages.client.BackToMainMenu;
 import edu.st.common.messages.client.JoinGame;
 import edu.st.common.messages.client.MakeMove;
 import edu.st.common.messages.client.PlayAgain;
+import edu.st.common.messages.client.PlayerAvatarChange;
 import edu.st.common.messages.server.GameEnded;
 import edu.st.common.messages.server.MoveMade;
 import edu.st.common.models.Game;
@@ -47,16 +48,27 @@ public class GameController extends Thread {
         continue;
       }
 
+      if (message.getType().contains("PlayerAvatarChange")) {
+        PlayerAvatarChange msg = (PlayerAvatarChange) message;
+        if (socket == game.getHostSocket()) {
+          Util.println(game.getPlayerSocket(), msg, channel);
+        } else {
+          Util.println(game.getHostSocket(), msg, channel);
+        }
+      }
+
       if (message.getType().contains("MakeMove")) {
         MakeMove msg = (MakeMove) message;
 
+        Token currentPlayer = game.getCurrentPlayer();
+
         // make sure its current player
-        if (game.getCurrentPlayer() == Token.X && socket != game.getHostSocket()) {
+        if (currentPlayer == Token.X && socket != game.getHostSocket()) {
           continue;
         }
 
         // make sure its current player
-        if (game.getCurrentPlayer() == Token.Y && socket != game.getPlayerSocket()) {
+        if (currentPlayer == Token.Y && socket != game.getPlayerSocket()) {
           continue;
         }
 
@@ -69,12 +81,11 @@ public class GameController extends Thread {
           continue;
         }
 
-        game.updateBoard(row, col);
+        board.get(row).set(col, currentPlayer);
 
         if (Util.isWinner(board)) {
-          // have to get previous because they swap before reaching
-          boolean player = game.getCurrentPlayer() == Token.X;
-          GameResult gameResult = player ? GameResult.Player : GameResult.Host;
+          boolean hostWon = currentPlayer == Token.X;
+          GameResult gameResult = hostWon ? GameResult.Host : GameResult.Player;
 
           Util.println(game.getHostSocket(), new GameEnded(gameResult, row, col), channel);
           Util.println(game.getPlayerSocket(), new GameEnded(gameResult, row, col), channel);
@@ -88,7 +99,8 @@ public class GameController extends Thread {
           continue;
         }
 
-        MoveMade moveMade = new MoveMade(row, col);
+        MoveMade moveMade = new MoveMade(row, col, currentPlayer);
+        game.updateCurrentPlayer();
         Util.println(game.getHostSocket(), moveMade, channel);
         Util.println(game.getPlayerSocket(), moveMade, channel);
       }

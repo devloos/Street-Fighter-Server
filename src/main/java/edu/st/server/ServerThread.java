@@ -38,8 +38,9 @@ public class ServerThread extends Thread {
 
                 Message actualMessage = packet.getMessage();
 
-                // if message invovles current game
                 if (actualMessage.getType().contains("MakeMove")) {
+                    GameController.addJob(new Pair<Socket, Packet<Message>>(socket, packet));
+                } else if (actualMessage.getType().contains("PlayerAvatarChange")) {
                     GameController.addJob(new Pair<Socket, Packet<Message>>(socket, packet));
                 } else {
                     RouterThread.addJob(new Pair<Socket, Packet<Message>>(socket, packet));
